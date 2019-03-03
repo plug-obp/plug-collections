@@ -1,0 +1,4 @@
+**/*.tgf
+.gradle
+build
+out
