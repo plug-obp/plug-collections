@@ -6,6 +6,11 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+
+// Fujita, Masahiro, Patrick C. McGeer, and JC-Y. Yang.
+// "Multi-terminal binary decision diagrams: An efficient data structure for matrix representation."
+// Formal methods in system design 10.2-3 (1997): 149-169.
+
 public class MTBDD<O, V> {
     //TODO: hashconsing
     //TODO: memoization in apply
