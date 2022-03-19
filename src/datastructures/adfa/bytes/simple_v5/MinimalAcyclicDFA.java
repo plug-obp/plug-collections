@@ -1,4 +1,4 @@
-package datastructures.adfa.bytes.simple_v4;
+package datastructures.adfa.bytes.simple_v5;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -67,6 +67,7 @@ public class MinimalAcyclicDFA {
     //DOING: 1) follow existing prefix if no risk of adding unwanted words
     //USES: TreeMap instead of HashMap for storing fanout
     //DOING: 2) increase the granularity from byte to group of bytes
+    //DOING: if we stay on the same path there is no need to call current.setNext(symbil, next) -- since it is already there
     public boolean add(List<byte[]> word) {
         boolean alreadyIn = true;
         Stack<State> path = new Stack<>();
@@ -83,16 +84,17 @@ public class MinimalAcyclicDFA {
                 //if a new state is added then the string was not already in
                 if (alreadyIn) alreadyIn = false;
                 if (current != startState && current.id != -1) extern(current);
+                current.setNext(symbol, next);
             }
             else if (next.inCount > 1) {
                 // clone and redirect
                 next = new State(next);
                 if (current != startState && current.id != -1) extern(current);
+                current.setNext(symbol, next);
             } else {
                 //stay on the existing DFA as long as there is no risk of adding unwanted words (inCount <=1)
                 modifiedFrom++;
             }
-            current.setNext(symbol, next);
             path.push(next);
             current = next;
         }

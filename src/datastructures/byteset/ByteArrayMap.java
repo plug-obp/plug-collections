@@ -402,9 +402,7 @@ public class ByteArrayMap<V> {
         public final void clear()               { ByteArrayMap.this.clear(); }
         public final Iterator<V> iterator()     { return new ValueIterator(); }
         public final boolean contains(Object o) { return containsValue(o); }
-//        public final Spliterator<V> spliterator() {
-//            return new ValueSpliterator<>(HashMap.this, 0, -1, 0, 0);
-//        }
+
         public final void forEach(Consumer<? super V> action) {
             Entry<V>[] tab;
             if (action == null)
@@ -447,9 +445,6 @@ public class ByteArrayMap<V> {
             }
             return false;
         }
-//        public final Spliterator<ByteArrayMap.Entry<V>> spliterator() {
-//            return new EntrySpliterator<>(ByteArrayMap.this, 0, -1, 0, 0);
-//        }
         public final void forEach(Consumer<? super Entry<V>> action) {
             Entry<V>[] tab;
             if (action == null)
