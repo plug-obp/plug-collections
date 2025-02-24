@@ -1,4 +1,4 @@
-package datastructures.adfa.bytes.simple_v4;
+package datastructures.adfa.bytes.simple_v1;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -8,47 +8,21 @@ import java.util.*;
 import java.util.function.Consumer;
 
 /**
- {@link <a href="http://www.jandaciuk.pl/adfa.html"> jan daciuk </a>}
- unsorted_construction line 365
+ {@see <a href="http://www.jandaciuk.pl/adfa.html"> jan daciuk </a>}
  */
 @SuppressWarnings("Duplicates")
 public class MinimalAcyclicDFA {
-    int symbolSize = 4;
 
     public Map<State, State> stateMap = new WeakHashMap<>();
     State startState = new State();
 
-    public MinimalAcyclicDFA() { }
-
-    public MinimalAcyclicDFA(int symbolSize) {
-        this.symbolSize = symbolSize;
-    }
-
-    public List<byte[]> word(byte[] string) {
-        int length = string.length / symbolSize;
-        List<byte[]> word = new ArrayList<>(length);
-        int i = 0;
-        for (; i < length - 1; i++) {
-            int offset = i * symbolSize;
-            word.add(i, Arrays.copyOfRange(string, offset, offset+symbolSize));
-        }
-        int offset = i*symbolSize;
-        int size = string.length % symbolSize == 0 ? symbolSize : string.length % symbolSize;
-        word.add(i, Arrays.copyOfRange(string, offset, offset+size));
-        return word;
-    }
-
     public boolean contains(byte[] string) {
-        return contains(word(string));
-    }
-
-    public boolean contains(List<byte[]> word) {
         if (startState == null) return false;
 
         State current = startState;
 
-        for ( int i = 0; i<word.size(); i++) {
-            State next = current.next(word.get(i));
+        for ( int i = 0; i<string.length; i++) {
+            State next = current.next(string[i]);
             if (next == null) {
                 return false;
             }
@@ -57,24 +31,19 @@ public class MinimalAcyclicDFA {
         return current.isFinal();
     }
 
-    public boolean add(byte[] string) {
-        return add(word(string));
-    }
-
+    //TODO: 1) follow existing prefix if no risk of adding unwanted words
+    //TODO: 2) increase the granularity from byte to group of bytes
     //TODO: 3) encode state fanout as BDD
     //Simple implementation: add the string, cloning if any match, then merge
     //uses hashconsing to accelerate the hashtable lookup
-    //DOING: 1) follow existing prefix if no risk of adding unwanted words
-    //USES: TreeMap instead of HashMap for storing fanout
-    //DOING: 2) increase the granularity from byte to group of bytes
-    public boolean add(List<byte[]> word) {
+    public boolean add(byte[] string) {
         boolean alreadyIn = true;
         Stack<State> path = new Stack<>();
-        int modifiedFrom = 0;
 
+        //clone the initial state
         State current = startState;
 
-        for (byte[] symbol : word) {
+        for (byte symbol : string) {
             State next = current.next(symbol);
 
             if (next == null) {
@@ -82,33 +51,22 @@ public class MinimalAcyclicDFA {
                 next = new State();
                 //if a new state is added then the string was not already in
                 if (alreadyIn) alreadyIn = false;
-                if (current != startState && current.id != -1) extern(current);
-            }
-            else if (next.inCount > 1) {
+            } else {
                 // clone and redirect
                 next = new State(next);
-                if (current != startState && current.id != -1) extern(current);
-            } else {
-                //stay on the existing DFA as long as there is no risk of adding unwanted words (inCount <=1)
-                modifiedFrom++;
             }
             current.setNext(symbol, next);
             path.push(next);
             current = next;
         }
-        if (modifiedFrom == word.size() && current.isFinal) {
-            //we stayed on the existing DFA, and arrived on a final state, so no need to merge
-            return true;
-        }
-
         current.setFinal();
-        merge(path, word, modifiedFrom);
 
+        merge(path, string);
         return  alreadyIn;
     }
 
-    public void merge(Stack<State> path, List<byte[]> word, int modifiedFrom) {
-        int i = word.size() - 1;
+    public void merge(Stack<State> path, byte[] string) {
+        int i = string.length - 1;
         while (!path.isEmpty()) {
             State current = path.pop();
             State equivalentState = intern(current);
@@ -120,29 +78,13 @@ public class MinimalAcyclicDFA {
                     precedent = startState;
                 } else {
                     precedent = path.peek();
-                    if (i < modifiedFrom) {
-                        //if i < modifiedFrom, then the states are already registered,
-                        //unregister them so that we can regroup even more
-                        extern(precedent);
-                    }
                 }
-                precedent.setNext(word.get(i), equivalentState);
-            } else {
-                if (i < modifiedFrom) {
-                    //all previous states are already registered
-                    break;
-                }
+                precedent.setNext(string[i], equivalentState);
             }
             i--;
         }
     }
 
-    public void extern(State state) {
-        State removed = stateMap.remove(state);
-        if (removed != null) {
-            removed.id = -1;
-        }
-    }
     public State intern(State state) {
         State equivalent = stateMap.get(state);
         if (equivalent == null) {

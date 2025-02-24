@@ -81,11 +81,11 @@ public class ByteArrayMap<V> {
     }
 
     /**
-     * Returns <tt>true</tt> if this map maps one or more keys to the
+     * Returns <code>true</code> if this map maps one or more keys to the
      * specified value.
      *
      * @param value value whose presence in this map is to be tested
-     * @return <tt>true</tt> if this map maps one or more keys to the
+     * @return <code>true</code> if this map maps one or more keys to the
      *         specified value
      */
     public boolean containsValue(Object value) {

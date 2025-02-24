@@ -1,13 +1,16 @@
-buildscript {
-    repositories {
-        jcenter()
-        maven { url "https://dl.bintray.com/plug-obp/maven" }
-    }
-    dependencies {
-        classpath group: 'fr.ensta-bretagne', name: 'plug-plugin', version: '+'
-    }
+
+plugins {
+    id 'fr.ensta-bretagne.obp2-plugin' version '1.4'
 }
 
-apply plugin: 'plug.plugin'
+version='1.0.0'
 
-dependencies {}
+obp2 {
+    javaVersion=JavaLanguageVersion.of(23)
+}
+
+javadoc.options.addStringOption('Xdoclint:all,-missing', '-quiet')
+
+dependencies {
+    testImplementation group: 'junit', name: 'junit', version: '4.13.1'
+}

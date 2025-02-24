@@ -1,14 +1,17 @@
-package datastructures.adfa.bytes.simple_v1;
+package datastructures.adfa.bytes.simple_v2;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
+import java.util.WeakHashMap;
 import java.util.function.Consumer;
 
 /**
- {@link <a href="http://www.jandaciuk.pl/adfa.html"> jan daciuk </a>}
+ {@see <a href="http://www.jandaciuk.pl/adfa.html"> jan daciuk </a>}
  */
 @SuppressWarnings("Duplicates")
 public class MinimalAcyclicDFA {
@@ -31,16 +34,16 @@ public class MinimalAcyclicDFA {
         return current.isFinal();
     }
 
-    //TODO: 1) follow existing prefix if no risk of adding unwanted words
     //TODO: 2) increase the granularity from byte to group of bytes
     //TODO: 3) encode state fanout as BDD
     //Simple implementation: add the string, cloning if any match, then merge
     //uses hashconsing to accelerate the hashtable lookup
+    //DOING: 1) follow existing prefix if no risk of adding unwanted words
     public boolean add(byte[] string) {
         boolean alreadyIn = true;
         Stack<State> path = new Stack<>();
+        int modifiedFrom = 0;
 
-        //clone the initial state
         State current = startState;
 
         for (byte symbol : string) {
@@ -51,21 +54,32 @@ public class MinimalAcyclicDFA {
                 next = new State();
                 //if a new state is added then the string was not already in
                 if (alreadyIn) alreadyIn = false;
-            } else {
+                if (current != startState && current.id != -1) extern(current);
+            }
+            else if (next.inCount > 1) {
                 // clone and redirect
                 next = new State(next);
+                if (current != startState && current.id != -1) extern(current);
+            } else {
+                //stay on the existing DFA as long as there is no risk of adding unwanted words (inCount <=1)
+                modifiedFrom++;
             }
             current.setNext(symbol, next);
             path.push(next);
             current = next;
         }
-        current.setFinal();
+        if (modifiedFrom == string.length && current.isFinal) {
+            //we stayed on the existing DFA, and arrived on a final state, so no need to merge
+            return true;
+        }
 
-        merge(path, string);
+        current.setFinal();
+        merge(path, string, modifiedFrom);
+
         return  alreadyIn;
     }
 
-    public void merge(Stack<State> path, byte[] string) {
+    public void merge(Stack<State> path, byte[] string, int modifiedFrom) {
         int i = string.length - 1;
         while (!path.isEmpty()) {
             State current = path.pop();
@@ -78,13 +92,29 @@ public class MinimalAcyclicDFA {
                     precedent = startState;
                 } else {
                     precedent = path.peek();
+                    if (i < modifiedFrom) {
+                        //if i < modifiedFrom, then the states are already registered,
+                        //unregister them so that we can regroup even more
+                        extern(precedent);
+                    }
                 }
                 precedent.setNext(string[i], equivalentState);
+            } else {
+                if (i < modifiedFrom) {
+                    //all previous states are already registered
+                    break;
+                }
             }
             i--;
         }
     }
 
+    public void extern(State state) {
+        State removed = stateMap.remove(state);
+        if (removed != null) {
+            removed.id = -1;
+        }
+    }
     public State intern(State state) {
         State equivalent = stateMap.get(state);
         if (equivalent == null) {

@@ -1,4 +1,4 @@
-package datastructures.adfa.bytes.simple_v2;
+package datastructures.adfa.bytes.simple_v3;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -11,7 +11,7 @@ import java.util.WeakHashMap;
 import java.util.function.Consumer;
 
 /**
- {@link <a href="http://www.jandaciuk.pl/adfa.html"> jan daciuk </a>}
+ {@see <a href="http://www.jandaciuk.pl/adfa.html"> jan daciuk </a>}
  */
 @SuppressWarnings("Duplicates")
 public class MinimalAcyclicDFA {
@@ -39,6 +39,7 @@ public class MinimalAcyclicDFA {
     //Simple implementation: add the string, cloning if any match, then merge
     //uses hashconsing to accelerate the hashtable lookup
     //DOING: 1) follow existing prefix if no risk of adding unwanted words
+    //USES: TreeMap instead of HashMap for storing fanout
     public boolean add(byte[] string) {
         boolean alreadyIn = true;
         Stack<State> path = new Stack<>();

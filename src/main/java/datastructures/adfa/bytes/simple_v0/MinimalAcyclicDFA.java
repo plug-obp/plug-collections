@@ -8,7 +8,7 @@ import java.util.*;
 import java.util.function.Consumer;
 
 /**
- {@link <a href="http://www.jandaciuk.pl/adfa.html"> jan daciuk </a>}
+ {@see <a href="http://www.jandaciuk.pl/adfa.html"> jan daciuk </a>}
  */
 @SuppressWarnings("Duplicates")
 public class MinimalAcyclicDFA {

@@ -1,31 +1,54 @@
-package datastructures.adfa.bytes.simple_v3;
+package datastructures.adfa.bytes.simple_v4;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.util.function.Consumer;
 
 /**
- {@link <a href="http://www.jandaciuk.pl/adfa.html"> jan daciuk </a>}
+ {@see <a href="http://www.jandaciuk.pl/adfa.html"> jan daciuk </a>}
+ unsorted_construction line 365
  */
 @SuppressWarnings("Duplicates")
 public class MinimalAcyclicDFA {
+    int symbolSize = 4;
 
     public Map<State, State> stateMap = new WeakHashMap<>();
     State startState = new State();
 
+    public MinimalAcyclicDFA() { }
+
+    public MinimalAcyclicDFA(int symbolSize) {
+        this.symbolSize = symbolSize;
+    }
+
+    public List<byte[]> word(byte[] string) {
+        int length = string.length / symbolSize;
+        List<byte[]> word = new ArrayList<>(length);
+        int i = 0;
+        for (; i < length - 1; i++) {
+            int offset = i * symbolSize;
+            word.add(i, Arrays.copyOfRange(string, offset, offset+symbolSize));
+        }
+        int offset = i*symbolSize;
+        int size = string.length % symbolSize == 0 ? symbolSize : string.length % symbolSize;
+        word.add(i, Arrays.copyOfRange(string, offset, offset+size));
+        return word;
+    }
+
     public boolean contains(byte[] string) {
+        return contains(word(string));
+    }
+
+    public boolean contains(List<byte[]> word) {
         if (startState == null) return false;
 
         State current = startState;
 
-        for ( int i = 0; i<string.length; i++) {
-            State next = current.next(string[i]);
+        for ( int i = 0; i<word.size(); i++) {
+            State next = current.next(word.get(i));
             if (next == null) {
                 return false;
             }
@@ -34,20 +57,24 @@ public class MinimalAcyclicDFA {
         return current.isFinal();
     }
 
-    //TODO: 2) increase the granularity from byte to group of bytes
+    public boolean add(byte[] string) {
+        return add(word(string));
+    }
+
     //TODO: 3) encode state fanout as BDD
     //Simple implementation: add the string, cloning if any match, then merge
     //uses hashconsing to accelerate the hashtable lookup
     //DOING: 1) follow existing prefix if no risk of adding unwanted words
     //USES: TreeMap instead of HashMap for storing fanout
-    public boolean add(byte[] string) {
+    //DOING: 2) increase the granularity from byte to group of bytes
+    public boolean add(List<byte[]> word) {
         boolean alreadyIn = true;
         Stack<State> path = new Stack<>();
         int modifiedFrom = 0;
 
         State current = startState;
 
-        for (byte symbol : string) {
+        for (byte[] symbol : word) {
             State next = current.next(symbol);
 
             if (next == null) {
@@ -69,19 +96,19 @@ public class MinimalAcyclicDFA {
             path.push(next);
             current = next;
         }
-        if (modifiedFrom == string.length && current.isFinal) {
+        if (modifiedFrom == word.size() && current.isFinal) {
             //we stayed on the existing DFA, and arrived on a final state, so no need to merge
             return true;
         }
 
         current.setFinal();
-        merge(path, string, modifiedFrom);
+        merge(path, word, modifiedFrom);
 
         return  alreadyIn;
     }
 
-    public void merge(Stack<State> path, byte[] string, int modifiedFrom) {
-        int i = string.length - 1;
+    public void merge(Stack<State> path, List<byte[]> word, int modifiedFrom) {
+        int i = word.size() - 1;
         while (!path.isEmpty()) {
             State current = path.pop();
             State equivalentState = intern(current);
@@ -99,7 +126,7 @@ public class MinimalAcyclicDFA {
                         extern(precedent);
                     }
                 }
-                precedent.setNext(string[i], equivalentState);
+                precedent.setNext(word.get(i), equivalentState);
             } else {
                 if (i < modifiedFrom) {
                     //all previous states are already registered
