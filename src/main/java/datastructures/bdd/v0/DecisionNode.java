@@ -2,15 +2,22 @@ package datastructures.bdd.v0;
 
 import java.util.Objects;
 
-public class DecisionNode<O, V> extends Node<O, V> {
-    Node<O, V> trueBranch;
-    Node<O, V> falseBranch;
+public class DecisionNode<T, V> extends Node<T, V> {
+    Node<T, V> trueBranch;
+    Node<T, V> falseBranch;
     V variable;
 
-    DecisionNode(V variable, Node<O, V> trueBranch, Node<O, V> falseBranch) {
+    DecisionNode(V variable, Node<T, V> trueBranch, Node<T, V> falseBranch) {
         this.variable = variable;
         this.trueBranch = trueBranch;
         this.falseBranch = falseBranch;
+    }
+
+    public Node<T, V> high() {
+        return trueBranch;
+    }
+    public Node<T, V> low() {
+        return falseBranch;
     }
 
     @Override
@@ -29,15 +36,19 @@ public class DecisionNode<O, V> extends Node<O, V> {
         if (obj instanceof DecisionNode) {
             try {
                 @SuppressWarnings(value = "unchecked")
-                DecisionNode<O,V> other = (DecisionNode<O, V>) obj;
-                return     trueBranch.equals(other.trueBranch)
-                        && falseBranch.equals(other.falseBranch)
-                        && variable.equals(other.variable);
+                DecisionNode<T,V> other = (DecisionNode<T, V>) obj;
+                return  variable.equals(other.variable)
+                        && trueBranch.equals(other.trueBranch)
+                        && falseBranch.equals(other.falseBranch);
             } catch (ClassCastException unused) {
                 return false;
             }
-
         }
         return false;
+    }
+
+    @Override
+    public <I, O> O accept(IVisitor<I, O, T, V> visitor, I input) {
+        return visitor.visit(this, input);
     }
 }

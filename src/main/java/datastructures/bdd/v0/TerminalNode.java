@@ -2,10 +2,10 @@ package datastructures.bdd.v0;
 
 import java.util.Objects;
 
-public class TerminalNode<O, V> extends Node<O, V> {
-    O value;
+public class TerminalNode<T, V> extends Node<T, V> {
+    T value;
 
-    TerminalNode(O value) {
+    TerminalNode(T value) {
         this.value = value;
     }
 
@@ -25,12 +25,17 @@ public class TerminalNode<O, V> extends Node<O, V> {
         if (obj instanceof TerminalNode) {
             try {
                 @SuppressWarnings(value = "unchecked")
-                TerminalNode<O, V> other = (TerminalNode<O, V>) obj;
+                TerminalNode<T, V> other = (TerminalNode<T, V>) obj;
                 return this.value.equals(other.value);
             } catch (ClassCastException unused) {
                 return false;
             }
         }
         return false;
+    }
+
+    @Override
+    public <I, O> O accept(IVisitor<I, O, T, V> visitor, I input) {
+        return visitor.visit(this, input);
     }
 }

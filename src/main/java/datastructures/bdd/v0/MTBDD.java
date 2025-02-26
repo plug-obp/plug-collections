@@ -16,10 +16,10 @@ public class MTBDD<O, V> {
     //TODO: memoization in apply
     //TODO: using a weak hash map will enable automatic garbage collecting on the nodeMap
     Map<Node<O,V>, Node<O, V>> nodeMap = new HashMap<>();
-    Comparator<V> variableOrder;
+    public Comparator<V> variableOrder;
 
     public Node<O, V> intern(Node<O, V> node) {
-        return nodeMap.putIfAbsent(node, node);
+        return nodeMap.computeIfAbsent(node, n -> node);
     }
 
     public Node<O, V> constant(O value) {
@@ -86,5 +86,16 @@ public class MTBDD<O, V> {
         }
         //should never get here, the previous conditions cover all cases
         return null;
+    }
+
+    public Node<O, V> restrict(Node<O, V> bdd, V variable, boolean value) {
+        if (bdd.isTerminal()) {
+            return bdd;
+        }
+        var node = (DecisionNode<O, V>) bdd;
+        if (node.variable.equals(variable)) {
+            return value ? node.high() : node.low();
+        }
+        return node(node.variable, restrict(node.high(), variable, value), restrict(node.low(), variable, value));
     }
 }
